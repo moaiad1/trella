@@ -1,0 +1,7 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+trella_dev.db
+uploads/
+*.sqlite3

@@ -1,0 +1,80 @@
+/**
+ * Arabic display labels for vehicle makes. The stored/submitted value stays
+ * the canonical English name (matches the catalog + backend) — only the
+ * label shown in the Arabic UI changes. Makes not listed here just show
+ * their raw name (most are already Latin-script brand names/abbreviations
+ * that don't meaningfully transliterate, e.g. "GMC", "BMC").
+ */
+export const MAKE_NAME_AR: Record<string, string> = {
+  ASV: "إيه إس في",
+  Autocar: "أوتوكار",
+  Beiben: "بيبين",
+  "Blue Bird": "بلو بيرد",
+  Bobcat: "بوبكات",
+  Capacity: "كاباسيتي",
+  "Capacity TJ": "كاباسيتي TJ",
+  Case: "كيس",
+  "Case IH": "كيس آي إتش",
+  Caterpillar: "كاتربيلر",
+  Chevrolet: "شيفروليه",
+  "Crane Carrier": "كرين كارير",
+  DAF: "داف",
+  Dodge: "دودج",
+  Dongfeng: "دونغفنغ",
+  FAW: "فاو",
+  Fontaine: "فونتين",
+  Ford: "فورد",
+  Freightliner: "فرايتلاينر",
+  Fuso: "فوسو",
+  Gehl: "جيل",
+  "Great Dane": "غريت داين",
+  Hino: "هينو",
+  Hyster: "هايستر",
+  Hyundai: "هيونداي",
+  International: "إنترناشيونال",
+  Isuzu: "إيسوزو",
+  Iveco: "إيفيكو",
+  JCB: "جي سي بي",
+  "John Deere": "جون دير",
+  Kalmar: "كالمار",
+  "Kalmar Ottawa": "كالمار أوتاوا",
+  Kenworth: "كينورث",
+  Komatsu: "كوماتسو",
+  Kubota: "كوبوتا",
+  Lonestar: "لون ستار",
+  MAN: "مان",
+  Mack: "ماك",
+  Manac: "ماناك",
+  "Mercedes-Benz": "مرسيدس بنز",
+  "Mitsubishi Fuso": "ميتسوبيشي فوسو",
+  Monon: "مونون",
+  "New Holland": "نيو هولاند",
+  Nissan: "نيسان",
+  Ottawa: "أوتاوا",
+  Peterbilt: "بيتربيلت",
+  "Polar Tank": "بولار تانك",
+  Ram: "رام",
+  "Renault Trucks": "رينو تركس",
+  Scania: "سكانيا",
+  Shacman: "شاكمان",
+  Sinotruk: "سينوتراك",
+  Sterling: "سترلينج",
+  Stoughton: "ستوتون",
+  Tatra: "تاترا",
+  Toyota: "تويوتا",
+  "Trail King": "تريل كينج",
+  "UD Trucks": "يو دي تركس",
+  Utility: "يوتيليتي",
+  Vanguard: "فانغارد",
+  Volvo: "فولفو",
+  Wabash: "واباش",
+  "Western Star": "ويسترن ستار",
+  Wilson: "ويلسون",
+  Yale: "ييل",
+};
+
+/** Label a raw make value for display: Arabic name in `ar`, raw value in `en`. */
+export function makeDisplayLabel(make: string, language: "en" | "ar"): string {
+  if (language !== "ar") return make;
+  return MAKE_NAME_AR[make] ?? make;
+}

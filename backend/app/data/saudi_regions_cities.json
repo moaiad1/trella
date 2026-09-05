@@ -1,0 +1,184 @@
+{
+  "regions": [
+    {
+      "code": "RY",
+      "name_en": "Riyadh Region",
+      "name_ar": "منطقة الرياض",
+      "cities": [
+        { "name_en": "Riyadh", "name_ar": "الرياض" },
+        { "name_en": "Al Kharj", "name_ar": "الخرج" },
+        { "name_en": "Ad Dilam", "name_ar": "الدلم" },
+        { "name_en": "Al Majma'ah", "name_ar": "المجمعة" },
+        { "name_en": "Al Ghat", "name_ar": "الغاط" },
+        { "name_en": "Wadi ad-Dawasir", "name_ar": "وادي الدواسر" },
+        { "name_en": "Afif", "name_ar": "عفيف" },
+        { "name_en": "Al Zulfi", "name_ar": "الزلفي" },
+        { "name_en": "Shaqra", "name_ar": "شقراء" },
+        { "name_en": "Huraymila", "name_ar": "حريملاء" },
+        { "name_en": "Al Quway'iyah", "name_ar": "القويعية" }
+      ]
+    },
+    {
+      "code": "MK",
+      "name_en": "Makkah Region",
+      "name_ar": "منطقة مكة المكرمة",
+      "cities": [
+        { "name_en": "Jeddah", "name_ar": "جدة" },
+        { "name_en": "Makkah", "name_ar": "مكة المكرمة" },
+        { "name_en": "Taif", "name_ar": "الطائف" },
+        { "name_en": "Rabigh", "name_ar": "رابغ" },
+        { "name_en": "Al Lith", "name_ar": "الليث" },
+        { "name_en": "Al Jumum", "name_ar": "الجموم" },
+        { "name_en": "Khulays", "name_ar": "خليص" },
+        { "name_en": "Adham", "name_ar": "أضم" },
+        { "name_en": "Ranyah", "name_ar": "رنية" },
+        { "name_en": "Turubah", "name_ar": "تربة" }
+      ]
+    },
+    {
+      "code": "EP",
+      "name_en": "Eastern Province",
+      "name_ar": "المنطقة الشرقية",
+      "cities": [
+        { "name_en": "Dammam", "name_ar": "الدمام" },
+        { "name_en": "Khobar", "name_ar": "الخبر" },
+        { "name_en": "Dhahran", "name_ar": "الظهران" },
+        { "name_en": "Al Ahsa", "name_ar": "الأحساء" },
+        { "name_en": "Hofuf", "name_ar": "الهفوف" },
+        { "name_en": "Jubail", "name_ar": "الجبيل" },
+        { "name_en": "Qatif", "name_ar": "القطيف" },
+        { "name_en": "Al Khafji", "name_ar": "الخفجي" },
+        { "name_en": "Ras Tanura", "name_ar": "رأس تنورة" },
+        { "name_en": "Al Nairyah", "name_ar": "النعيرية" },
+        { "name_en": "Buqayq", "name_ar": "بقيق" }
+      ]
+    },
+    {
+      "code": "MD",
+      "name_en": "Madinah Region",
+      "name_ar": "منطقة المدينة المنورة",
+      "cities": [
+        { "name_en": "Madinah", "name_ar": "المدينة المنورة" },
+        { "name_en": "Yanbu", "name_ar": "ينبع" },
+        { "name_en": "Al Ula", "name_ar": "العلا" },
+        { "name_en": "Mahd adh Dhahab", "name_ar": "مهد الذهب" },
+        { "name_en": "Badr", "name_ar": "بدر" },
+        { "name_en": "Khaybar", "name_ar": "خيبر" },
+        { "name_en": "Al Hanakiyah", "name_ar": "الحناكية" }
+      ]
+    },
+    {
+      "code": "QA",
+      "name_en": "Al-Qassim Region",
+      "name_ar": "منطقة القصيم",
+      "cities": [
+        { "name_en": "Buraydah", "name_ar": "بريدة" },
+        { "name_en": "Unaizah", "name_ar": "عنيزة" },
+        { "name_en": "Ar Rass", "name_ar": "الرس" },
+        { "name_en": "Al Mithnab", "name_ar": "المذنب" },
+        { "name_en": "Al Badai", "name_ar": "البدائع" },
+        { "name_en": "Al Bukayriyah", "name_ar": "البكيرية" },
+        { "name_en": "Riyadh al-Khabra", "name_ar": "رياض الخبراء" }
+      ]
+    },
+    {
+      "code": "AS",
+      "name_en": "Asir Region",
+      "name_ar": "منطقة عسير",
+      "cities": [
+        { "name_en": "Abha", "name_ar": "أبها" },
+        { "name_en": "Khamis Mushait", "name_ar": "خميس مشيط" },
+        { "name_en": "Al Namas", "name_ar": "النماص" },
+        { "name_en": "Bisha", "name_ar": "بيشة" },
+        { "name_en": "Sarat Abidah", "name_ar": "سراة عبيدة" },
+        { "name_en": "Mahayl", "name_ar": "محايل" },
+        { "name_en": "Tanomah", "name_ar": "تنومة" }
+      ]
+    },
+    {
+      "code": "TB",
+      "name_en": "Tabuk Region",
+      "name_ar": "منطقة تبوك",
+      "cities": [
+        { "name_en": "Tabuk", "name_ar": "تبوك" },
+        { "name_en": "Al Wajh", "name_ar": "الوجه" },
+        { "name_en": "Duba", "name_ar": "ضباء" },
+        { "name_en": "Umluj", "name_ar": "أملج" },
+        { "name_en": "Tayma", "name_ar": "تيماء" },
+        { "name_en": "Haql", "name_ar": "حقل" }
+      ]
+    },
+    {
+      "code": "HA",
+      "name_en": "Ha'il Region",
+      "name_ar": "منطقة حائل",
+      "cities": [
+        { "name_en": "Ha'il", "name_ar": "حائل" },
+        { "name_en": "Baq'a", "name_ar": "بقعاء" },
+        { "name_en": "Al Ghazalah", "name_ar": "الغزالة" },
+        { "name_en": "Al Shinan", "name_ar": "الشنان" },
+        { "name_en": "Al Hait", "name_ar": "الحائط" }
+      ]
+    },
+    {
+      "code": "NB",
+      "name_en": "Northern Borders Region",
+      "name_ar": "منطقة الحدود الشمالية",
+      "cities": [
+        { "name_en": "Arar", "name_ar": "عرعر" },
+        { "name_en": "Rafha", "name_ar": "رفحاء" },
+        { "name_en": "Turaif", "name_ar": "طريف" },
+        { "name_en": "Al Uwayqilah", "name_ar": "العويقيلة" }
+      ]
+    },
+    {
+      "code": "JA",
+      "name_en": "Jazan Region",
+      "name_ar": "منطقة جازان",
+      "cities": [
+        { "name_en": "Jazan", "name_ar": "جازان" },
+        { "name_en": "Sabya", "name_ar": "صبيا" },
+        { "name_en": "Abu Arish", "name_ar": "أبو عريش" },
+        { "name_en": "Samtah", "name_ar": "صامطة" },
+        { "name_en": "Farasan", "name_ar": "فرسان" },
+        { "name_en": "Al Darb", "name_ar": "الدرب" },
+        { "name_en": "Ahad al-Masarihah", "name_ar": "أحد المسارحة" }
+      ]
+    },
+    {
+      "code": "NJ",
+      "name_en": "Najran Region",
+      "name_ar": "منطقة نجران",
+      "cities": [
+        { "name_en": "Najran", "name_ar": "نجران" },
+        { "name_en": "Sharurah", "name_ar": "شرورة" },
+        { "name_en": "Hubuna", "name_ar": "حبونا" },
+        { "name_en": "Badr al-Janub", "name_ar": "بدر الجنوب" },
+        { "name_en": "Yadamah", "name_ar": "يدمة" }
+      ]
+    },
+    {
+      "code": "BH",
+      "name_en": "Al-Bahah Region",
+      "name_ar": "منطقة الباحة",
+      "cities": [
+        { "name_en": "Al-Bahah", "name_ar": "الباحة" },
+        { "name_en": "Baljurashi", "name_ar": "بلجرشي" },
+        { "name_en": "Al Mandaq", "name_ar": "المندق" },
+        { "name_en": "Al Makhwah", "name_ar": "المخواة" },
+        { "name_en": "Qilwah", "name_ar": "قلوة" }
+      ]
+    },
+    {
+      "code": "JF",
+      "name_en": "Al-Jawf Region",
+      "name_ar": "منطقة الجوف",
+      "cities": [
+        { "name_en": "Sakakah", "name_ar": "سكاكا" },
+        { "name_en": "Qurayyat", "name_ar": "القريات" },
+        { "name_en": "Dumat al-Jandal", "name_ar": "دومة الجندل" },
+        { "name_en": "Al Hadithah", "name_ar": "الحديثة" }
+      ]
+    }
+  ]
+}
