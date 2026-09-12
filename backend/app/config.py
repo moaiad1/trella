@@ -30,9 +30,13 @@ class Settings(BaseSettings):
     # When True, phone-change request returns debugCode in JSON and logs OTP (dev only — integrate SMS in production).
     phone_otp_debug: bool = Field(default=False, validation_alias="TRELLA_PHONE_OTP_DEBUG")
 
-    # Admin login 2FA. When debug is True the code is also returned as debugCode in the login
-    # response for local testing. Set to false once RESEND_API_KEY delivers it for real.
+    # Admin login 2FA and signup email verification. When debug is True the code is also
+    # returned as debugCode in the response for local testing. Set to false once
+    # RESEND_API_KEY delivers it for real.
     admin_2fa_debug: bool = Field(default=True, validation_alias="TRELLA_ADMIN_2FA_DEBUG")
+
+    # Minimum wait between "resend code" requests during signup email verification.
+    signup_otp_cooldown_seconds: int = Field(default=110, validation_alias="TRELLA_SIGNUP_OTP_COOLDOWN_SECONDS")
 
     # Optional: transactional email via Resend (https://resend.com). Without a key, emails are
     # skipped and the app falls back to logging/debugCode only.

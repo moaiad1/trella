@@ -201,6 +201,23 @@ class VerifyTwoFactorBody(BaseModel):
     code: str = Field(min_length=4, max_length=8)
 
 
+class RegisterChallenge(BaseModel):
+    """Returned after signup — the account isn't created until the emailed code is confirmed."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    requiresVerification: Literal[True] = True
+    challengeToken: str
+    debugCode: str | None = None
+    cooldownSeconds: int
+
+
+class ResendSignupCodeBody(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    challengeToken: str = Field(min_length=1)
+
+
 class UserPublic(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 

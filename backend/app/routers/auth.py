@@ -10,13 +10,15 @@ from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user_required
 from app.email_sender import send_email
-from app.models import AdminLoginChallenge, PhoneChangeOtp, User
+from app.models import AdminLoginChallenge, PhoneChangeOtp, SignupChallenge, User
 from app.schemas import (
     CompanyProfileUpdate,
     PasswordChange,
     PhoneChangeConfirmBody,
     PhoneChangeRequestBody,
     PhoneSetInitialBody,
+    RegisterChallenge,
+    ResendSignupCodeBody,
     Token,
     TwoFactorChallenge,
     UserLogin,
@@ -58,30 +60,126 @@ def _user_public(u: User) -> UserPublic:
     )
 
 
-@router.post("/register", response_model=Token)
-def register(body: UserRegister, db: Session = Depends(get_db)) -> Token:
+SIGNUP_OTP_TTL_MINUTES = 10
+
+
+def _send_signup_code(db: Session, row: SignupChallenge, code: str) -> None:
+    sent = send_email(
+        row.email,
+        "Verify your Trucks account",
+        f"Your verification code is: {code}\n\nThis code expires in {SIGNUP_OTP_TTL_MINUTES} minutes.",
+    )
+    if not sent:
+        log.warning("Signup verification email not sent (Resend not configured or send failed)")
+
+
+def _issue_signup_challenge(db: Session, row: SignupChallenge, code: str) -> RegisterChallenge:
+    db.commit()
+    _send_signup_code(db, row, code)
+    return RegisterChallenge(
+        challengeToken=row.challenge_token,
+        debugCode=code if settings.admin_2fa_debug else None,
+        cooldownSeconds=settings.signup_otp_cooldown_seconds,
+    )
+
+
+@router.post("/register", response_model=RegisterChallenge)
+def register(body: UserRegister, db: Session = Depends(get_db)) -> RegisterChallenge:
     email = str(body.email).strip().lower()
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(status_code=400, detail="Email already registered")
     is_company = body.accountType == "company"
-    user = User(
+
+    existing = db.scalar(select(SignupChallenge).where(SignupChallenge.email == email))
+    if existing:
+        db.delete(existing)
+        db.flush()
+
+    payload = {
+        "password_hash": hash_password(body.password),
+        "first_name": str(body.firstName).strip(),
+        "last_name": str(body.lastName).strip(),
+        "phone": str(body.phone).strip(),
+        "account_type": body.accountType,
+        "company_name": body.companyName.strip() if is_company else "",
+        "cr_number": body.crNumber.strip() if is_company else "",
+        "has_vat": body.hasVat if is_company else False,
+        "vat_number": body.vatNumber.strip() if (is_company and body.hasVat) else "",
+        "terms_accepted": body.termsAccepted,
+        "company_status": "pending" if is_company else "approved",
+    }
+
+    now = datetime.now(timezone.utc)
+    code = f"{secrets.randbelow(900000) + 100000:06d}"
+    row = SignupChallenge(
         email=email,
-        password_hash=hash_password(body.password),
-        first_name=str(body.firstName).strip(),
-        last_name=str(body.lastName).strip(),
-        phone=str(body.phone).strip(),
-        account_type=body.accountType,
-        company_name=body.companyName.strip() if is_company else "",
-        cr_number=body.crNumber.strip() if is_company else "",
-        has_vat=body.hasVat if is_company else False,
-        vat_number=body.vatNumber.strip() if (is_company and body.hasVat) else "",
-        terms_accepted=body.termsAccepted,
-        company_status="pending" if is_company else "approved",
+        challenge_token=secrets.token_urlsafe(32),
+        payload=payload,
+        code_hash=hash_password(code),
+        expires_at=now + timedelta(minutes=SIGNUP_OTP_TTL_MINUTES),
+        last_sent_at=now,
+    )
+    db.add(row)
+    return _issue_signup_challenge(db, row, code)
+
+
+@router.post("/register/verify", response_model=Token)
+def register_verify(body: VerifyTwoFactorBody, db: Session = Depends(get_db)) -> Token:
+    row = db.scalar(select(SignupChallenge).where(SignupChallenge.challenge_token == body.challengeToken))
+    if not row:
+        raise HTTPException(status_code=400, detail="Invalid or expired code — sign up again")
+    if _as_utc(row.expires_at) < datetime.now(timezone.utc):
+        db.delete(row)
+        db.commit()
+        raise HTTPException(status_code=400, detail="Code expired — sign up again")
+    if not verify_password(body.code, row.code_hash):
+        raise HTTPException(status_code=400, detail="Incorrect code")
+
+    if db.scalar(select(User).where(User.email == row.email)):
+        db.delete(row)
+        db.commit()
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    p = row.payload
+    user = User(
+        email=row.email,
+        password_hash=p["password_hash"],
+        first_name=p["first_name"],
+        last_name=p["last_name"],
+        phone=p["phone"],
+        account_type=p["account_type"],
+        company_name=p["company_name"],
+        cr_number=p["cr_number"],
+        has_vat=p["has_vat"],
+        vat_number=p["vat_number"],
+        terms_accepted=p["terms_accepted"],
+        company_status=p["company_status"],
     )
     db.add(user)
+    db.delete(row)
     db.commit()
     db.refresh(user)
     return Token(access_token=create_access_token(user.id))
+
+
+@router.post("/register/resend", response_model=RegisterChallenge)
+def register_resend(body: ResendSignupCodeBody, db: Session = Depends(get_db)) -> RegisterChallenge:
+    row = db.scalar(select(SignupChallenge).where(SignupChallenge.challenge_token == body.challengeToken))
+    if not row:
+        raise HTTPException(status_code=400, detail="Verification session not found — sign up again")
+
+    now = datetime.now(timezone.utc)
+    elapsed = (now - _as_utc(row.last_sent_at)).total_seconds()
+    if elapsed < settings.signup_otp_cooldown_seconds:
+        remaining = int(settings.signup_otp_cooldown_seconds - elapsed)
+        raise HTTPException(status_code=429, detail=f"Please wait {remaining}s before requesting a new code")
+
+    code = f"{secrets.randbelow(900000) + 100000:06d}"
+    row.code_hash = hash_password(code)
+    row.expires_at = now + timedelta(minutes=SIGNUP_OTP_TTL_MINUTES)
+    row.last_sent_at = now
+    db.add(row)
+    return _issue_signup_challenge(db, row, code)
 
 
 @router.post("/login", response_model=Token | TwoFactorChallenge)

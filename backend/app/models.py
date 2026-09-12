@@ -139,6 +139,21 @@ class AdminLoginChallenge(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class SignupChallenge(Base):
+    """Pending email verification for a new account signup — the user row is only
+    created once the code is confirmed."""
+
+    __tablename__ = "signup_challenges"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    challenge_token: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    payload: Mapped[dict] = mapped_column(JSON)
+    code_hash: Mapped[str] = mapped_column(String(255))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class ContactMessage(Base):
     """A message submitted through the public "Contact us" form."""
 

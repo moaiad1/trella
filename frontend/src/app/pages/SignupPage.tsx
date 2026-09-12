@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -25,11 +25,17 @@ const CR_NUMBER_RE = /^\d{10}$/;
 const VAT_NUMBER_RE = /^3\d{13}3$/;
 
 export function SignupPage() {
-  const { register, getAccessToken, refreshUser } = useAuth();
+  const { register, verifySignup, resendSignupCode, getAccessToken, refreshUser } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState<"type" | "details">("type");
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [challengeToken, setChallengeToken] = useState("");
+  const [verifyCode, setVerifyCode] = useState("");
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -78,7 +84,7 @@ export function SignupPage() {
     }
     setSubmitting(true);
     try {
-      await register({
+      const result = await register({
         email,
         password,
         firstName: firstName.trim(),
@@ -91,6 +97,31 @@ export function SignupPage() {
         vatNumber: accountType === "company" && hasVat ? vatNumber.trim() : "",
         termsAccepted: true,
       });
+      setChallengeToken(result.challengeToken);
+      setCooldownRemaining(result.cooldownSeconds);
+      setVerifyCode("");
+      setVerifyOpen(true);
+      if (result.debugCode) {
+        toast.info(`${t("devCodeHint")} ${result.debugCode}`);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("signupFailed"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!verifyOpen || cooldownRemaining <= 0) return;
+    const id = setInterval(() => setCooldownRemaining((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [verifyOpen, cooldownRemaining > 0]);
+
+  const onVerifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVerifying(true);
+    try {
+      await verifySignup(challengeToken, verifyCode);
       if (accountType === "company" && crDocumentFile) {
         try {
           const url = await uploadTruckImage(crDocumentFile, getAccessToken);
@@ -111,12 +142,28 @@ export function SignupPage() {
           toast.error(t("crDocumentUploadFailedAfterSignup"));
         }
       }
+      setVerifyOpen(false);
       toast.success(t("signupSuccess"));
       navigate(redirectTo.startsWith("/") ? redirectTo : "/add-truck", { replace: true });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("signupFailed"));
+      toast.error(err instanceof Error ? err.message : t("signupVerifyFailed"));
     } finally {
-      setSubmitting(false);
+      setVerifying(false);
+    }
+  };
+
+  const onResendCode = async () => {
+    setResending(true);
+    try {
+      const result = await resendSignupCode(challengeToken);
+      setCooldownRemaining(result.cooldownSeconds);
+      if (result.debugCode) {
+        toast.info(`${t("devCodeHint")} ${result.debugCode}`);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("signupVerifyFailed"));
+    } finally {
+      setResending(false);
     }
   };
 
@@ -367,6 +414,49 @@ export function SignupPage() {
             <DialogDescription className="sr-only">{t("termsAndConditionsLink")}</DialogDescription>
           </DialogHeader>
           <div className="whitespace-pre-line text-sm text-gray-700">{t("termsContent")}</div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={verifyOpen} onOpenChange={(open) => !verifying && setVerifyOpen(open)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("signupVerifyTitle")}</DialogTitle>
+            <DialogDescription>{t("signupVerifySubtitle")}</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={onVerifySubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="signup-verify-code">{t("verificationCodeLabel")}</Label>
+              <Input
+                id="signup-verify-code"
+                type="text"
+                dir="ltr"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={verifyCode}
+                onChange={(e) => setVerifyCode(e.target.value)}
+                required
+                minLength={4}
+                className="mt-1"
+                autoFocus
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={verifying}>
+              {verifying ? "…" : t("confirmSignupCode")}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              disabled={resending || cooldownRemaining > 0}
+              onClick={onResendCode}
+            >
+              {resending
+                ? "…"
+                : cooldownRemaining > 0
+                  ? `${t("resendCodeIn")} ${cooldownRemaining}s`
+                  : t("resendCode")}
+            </Button>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

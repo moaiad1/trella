@@ -49,13 +49,21 @@ export type LoginResult =
   | { requiresTwoFactor: false }
   | { requiresTwoFactor: true; challengeToken: string; debugCode?: string | null };
 
+export interface RegisterResult {
+  challengeToken: string;
+  debugCode?: string | null;
+  cooldownSeconds: number;
+}
+
 interface AuthContextType {
   user: AuthUser | null;
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<LoginResult>;
   verifyTwoFactor: (challengeToken: string, code: string) => Promise<void>;
-  register: (params: RegisterParams) => Promise<void>;
+  register: (params: RegisterParams) => Promise<RegisterResult>;
+  verifySignup: (challengeToken: string, code: string) => Promise<void>;
+  resendSignupCode: (challengeToken: string) => Promise<RegisterResult>;
   logout: () => void;
   getAccessToken: () => string | null;
   refreshUser: () => Promise<void>;
@@ -157,17 +165,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchMe(data.access_token);
   };
 
-  const register = async (params: RegisterParams) => {
+  const register = async (params: RegisterParams): Promise<RegisterResult> => {
     const res = await fetch(`${apiBase}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
     });
     if (!res.ok) throw new Error(await parseError(res));
+    const data = (await res.json()) as {
+      challengeToken: string;
+      debugCode?: string | null;
+      cooldownSeconds: number;
+    };
+    return {
+      challengeToken: data.challengeToken,
+      debugCode: data.debugCode ?? null,
+      cooldownSeconds: data.cooldownSeconds,
+    };
+  };
+
+  const verifySignup = async (challengeToken: string, code: string) => {
+    const res = await fetch(`${apiBase}/auth/register/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ challengeToken, code }),
+    });
+    if (!res.ok) throw new Error(await parseError(res));
     const data = (await res.json()) as { access_token: string };
     localStorage.setItem(STORAGE_KEY, data.access_token);
     setToken(data.access_token);
     await fetchMe(data.access_token);
+  };
+
+  const resendSignupCode = async (challengeToken: string): Promise<RegisterResult> => {
+    const res = await fetch(`${apiBase}/auth/register/resend`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ challengeToken }),
+    });
+    if (!res.ok) throw new Error(await parseError(res));
+    const data = (await res.json()) as {
+      challengeToken: string;
+      debugCode?: string | null;
+      cooldownSeconds: number;
+    };
+    return {
+      challengeToken: data.challengeToken,
+      debugCode: data.debugCode ?? null,
+      cooldownSeconds: data.cooldownSeconds,
+    };
   };
 
   const logout = () => {
@@ -192,6 +238,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         verifyTwoFactor,
         register,
+        verifySignup,
+        resendSignupCode,
         logout,
         getAccessToken,
         refreshUser,
