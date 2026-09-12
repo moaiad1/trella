@@ -32,7 +32,7 @@ export interface Truck {
   features: string[];
   images: string[];
   videoUrl?: string | null;
-  listingStatus?: "active" | "reserved" | "sold";
+  listingStatus?: "active" | "reserved" | "sold" | "archived";
   dateAdded: string;
 }
 
@@ -42,6 +42,7 @@ interface TruckContextType {
   error: string | null;
   addTruck: (truck: Omit<Truck, "id" | "dateAdded" | "refNo">) => Promise<void>;
   updateTruck: (id: string, truck: Omit<Truck, "id" | "dateAdded" | "refNo">) => Promise<void>;
+  deleteTruck: (id: string) => Promise<void>;
   refreshTrucks: () => Promise<void>;
 }
 
@@ -127,8 +128,22 @@ export function TruckProvider({ children }: { children: ReactNode }) {
     setTrucks((prev) => prev.map((t) => (t.id === id ? updated : t)));
   };
 
+  const deleteTruck = async (id: string) => {
+    const token = getAccessToken();
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`${apiBase}/trucks/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers,
+    });
+    if (!res.ok) throw new Error(await parseError(res));
+    setTrucks((prev) => prev.filter((t) => t.id !== id));
+  };
+
   return (
-    <TruckContext.Provider value={{ trucks, loading, error, addTruck, updateTruck, refreshTrucks }}>
+    <TruckContext.Provider
+      value={{ trucks, loading, error, addTruck, updateTruck, deleteTruck, refreshTrucks }}
+    >
       {children}
     </TruckContext.Provider>
   );

@@ -34,8 +34,8 @@ export function FloatingAskQuestionsWidget() {
       role="complementary"
       aria-label={t("footerAnyQuestions")}
     >
-      <a
-        href="mailto:support@marketsmart.com?subject=MarketSmart%20inquiry"
+      <Link
+        to="/contact"
         className="flex items-center gap-3 rounded-s-full py-2.5 ps-5 pe-2 text-sm font-medium hover:bg-neutral-50"
       >
         <span
@@ -45,7 +45,7 @@ export function FloatingAskQuestionsWidget() {
           <MessageCircle className="h-5 w-5 text-white" strokeWidth={2} />
         </span>
         <span>{t("footerAnyQuestions")}</span>
-      </a>
+      </Link>
       <button
         type="button"
         onClick={dismiss}
@@ -114,9 +114,9 @@ export function SiteFooter() {
               </h3>
               <ul className="space-y-3">
                 <li>
-                  <a href="mailto:support@marketsmart.com" className={linkClass}>
+                  <Link to="/contact" className={linkClass}>
                     {t("footerContact")}
-                  </a>
+                  </Link>
                 </li>
                 <li>
                   <span className="text-sm text-neutral-600">{t("footerCareers")}</span>
@@ -190,7 +190,7 @@ export function SiteFooter() {
                 className="inline-flex items-center gap-2 rounded-md border border-neutral-600 px-4 py-2 text-sm text-white transition hover:border-neutral-400 hover:bg-white/5"
               >
                 <Globe className="h-4 w-4" />
-                {language === "en" ? "English" : "العربية"}
+                {language === "ar" ? "العربية" : language === "ur" ? "اردو" : "English"}
               </button>
             </div>
           </div>

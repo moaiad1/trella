@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     # When True, phone-change request returns debugCode in JSON and logs OTP (dev only — integrate SMS in production).
     phone_otp_debug: bool = Field(default=False, validation_alias="TRELLA_PHONE_OTP_DEBUG")
 
+    # Admin login 2FA. When debug is True the code is also returned as debugCode in the login
+    # response for local testing. Set to false once RESEND_API_KEY delivers it for real.
+    admin_2fa_debug: bool = Field(default=True, validation_alias="TRELLA_ADMIN_2FA_DEBUG")
+
+    # Optional: transactional email via Resend (https://resend.com). Without a key, emails are
+    # skipped and the app falls back to logging/debugCode only.
+    resend_api_key: str | None = Field(default=None, validation_alias="RESEND_API_KEY")
+    resend_from_email: str = Field(default="otp@maketsmart.com", validation_alias="RESEND_FROM_EMAIL")
+
 
 settings = Settings()
 

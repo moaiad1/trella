@@ -12,6 +12,8 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { ChatThreadPage } from "./pages/ChatThreadPage";
 import { MyListingsPage } from "./pages/MyListingsPage";
 import { AdminCompaniesPage } from "./pages/AdminCompaniesPage";
+import { AdminContactMessagesPage } from "./pages/AdminContactMessagesPage";
+import { ContactPage } from "./pages/ContactPage";
 import { NotFound } from "./pages/NotFound";
 
 export const router = createBrowserRouter([
@@ -70,6 +72,15 @@ export const router = createBrowserRouter([
           </RequireAdmin>
         ),
       },
+      {
+        path: "admin/contact-messages",
+        element: (
+          <RequireAdmin>
+            <AdminContactMessagesPage />
+          </RequireAdmin>
+        ),
+      },
+      { path: "contact", Component: ContactPage },
       { path: "login", Component: LoginPage },
       { path: "signup", Component: SignupPage },
       { path: "*", Component: NotFound },

@@ -64,7 +64,7 @@ TruckUpdate = TruckCreate
 class ListingStatusUpdate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    listing_status: Literal["active", "reserved", "sold"] = Field(alias="listingStatus")
+    listing_status: Literal["active", "reserved", "sold", "archived"] = Field(alias="listingStatus")
 
 
 class TruckOut(BaseModel):
@@ -90,14 +90,14 @@ class TruckOut(BaseModel):
     features: list[str]
     images: list[str]
     videoUrl: str | None = None
-    listingStatus: Literal["active", "reserved", "sold"] = "active"
+    listingStatus: Literal["active", "reserved", "sold", "archived"] = "active"
     dateAdded: str
     refNo: str
 
 
-def _listing_status_out(t: Truck) -> Literal["active", "reserved", "sold"]:
+def _listing_status_out(t: Truck) -> Literal["active", "reserved", "sold", "archived"]:
     s = (getattr(t, "listing_status", None) or "active").strip().lower()
-    if s in ("active", "reserved", "sold"):
+    if s in ("active", "reserved", "sold", "archived"):
         return s  # type: ignore[return-value]
     return "active"
 
@@ -183,6 +183,22 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    requiresTwoFactor: Literal[False] = False
+
+
+class TwoFactorChallenge(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    requiresTwoFactor: Literal[True] = True
+    challengeToken: str
+    debugCode: str | None = None
+
+
+class VerifyTwoFactorBody(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    challengeToken: str = Field(min_length=1)
+    code: str = Field(min_length=4, max_length=8)
 
 
 class UserPublic(BaseModel):
@@ -363,3 +379,26 @@ class AdminCompanyStatusUpdate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     companyStatus: Literal["pending", "approved", "rejected"]
+
+
+class ContactMessageCreate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str = Field(min_length=1, max_length=128)
+    email: EmailStr
+    phone: str = Field(default="", max_length=32)
+    subject: str = Field(default="", max_length=200)
+    body: str = Field(min_length=1, max_length=4000)
+
+
+class ContactMessageOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int
+    name: str
+    email: str
+    phone: str
+    subject: str
+    body: str
+    isRead: bool
+    createdAt: str

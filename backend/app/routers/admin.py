@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_admin_user
-from app.models import User
-from app.schemas import AdminCompanyOut, AdminCompanyStatusUpdate
+from app.models import ContactMessage, User
+from app.schemas import AdminCompanyOut, AdminCompanyStatusUpdate, ContactMessageOut
 
 router = APIRouter()
 
@@ -62,3 +62,46 @@ def update_company_status(
     db.commit()
     db.refresh(user)
     return _admin_company_out(user)
+
+
+def _contact_message_out(m: ContactMessage) -> ContactMessageOut:
+    return ContactMessageOut(
+        id=m.id,
+        name=m.name,
+        email=m.email,
+        phone=m.phone or "",
+        subject=m.subject or "",
+        body=m.body,
+        isRead=bool(m.is_read),
+        createdAt=m.created_at.isoformat() if m.created_at else "",
+    )
+
+
+@router.get("/contact-messages", response_model=list[ContactMessageOut])
+def list_contact_messages(
+    unread_only: bool = False,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_current_admin_user),
+) -> list[ContactMessageOut]:
+    stmt = select(ContactMessage)
+    if unread_only:
+        stmt = stmt.where(ContactMessage.is_read.is_(False))
+    stmt = stmt.order_by(ContactMessage.created_at.desc())
+    rows = db.execute(stmt).scalars().all()
+    return [_contact_message_out(m) for m in rows]
+
+
+@router.patch("/contact-messages/{message_id}/read", response_model=ContactMessageOut)
+def mark_contact_message_read(
+    message_id: int,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_current_admin_user),
+) -> ContactMessageOut:
+    m = db.get(ContactMessage, message_id)
+    if m is None:
+        raise HTTPException(status_code=404, detail="Message not found")
+    m.is_read = True
+    db.add(m)
+    db.commit()
+    db.refresh(m)
+    return _contact_message_out(m)

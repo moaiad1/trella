@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import resolved_upload_dir, settings
 from app.database import SessionLocal, engine
 from app.models import Base
-from app.routers import admin, ai_listing, auth, me, trucks
+from app.routers import admin, ai_listing, auth, contact, me, trucks
 from app.schema_bootstrap import (
     ensure_truck_inquiry_columns,
     ensure_truck_table_columns,
@@ -43,13 +43,15 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="MarketSmart API", lifespan=lifespan)
+app = FastAPI(title="Trucks API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://127.0.0.1:5173",
         "http://localhost:5173",
+        "https://maketsmart.com",
+        "https://www.maketsmart.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -61,6 +63,7 @@ app.include_router(trucks.router, prefix="/api/trucks")
 app.include_router(me.router, prefix="/api")
 app.include_router(ai_listing.router, prefix="/api")
 app.include_router(admin.router, prefix="/api/admin")
+app.include_router(contact.router, prefix="/api")
 
 _upload_dir = resolved_upload_dir()
 _upload_dir.mkdir(parents=True, exist_ok=True)
@@ -78,7 +81,7 @@ def public_features() -> dict[str, bool]:
 @app.get("/")
 def root() -> dict[str, str]:
     return {
-        "service": "MarketSmart API",
+        "service": "Trucks API",
         "docs": "/docs",
         "openapi": "/openapi.json",
         "health": "/health",

@@ -1,11 +1,18 @@
+import { useState } from "react";
 import { Link } from "react-router";
-import { MapPin, Calendar, Gauge, Building, User } from "lucide-react";
+import { MapPin, Calendar, Gauge, Building, User, Archive, Trash2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Truck } from "../context/TruckContext";
+import { Button } from "./ui/button";
+import { Truck, useTrucks } from "../context/TruckContext";
+import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { DEFAULT_LISTING_IMAGE, listingRefDisplay } from "../lib/listingDefaults";
 import { SarAmount } from "./SarAmount";
+import { getApiBase } from "../lib/apiBase";
+
+const apiBase = getApiBase();
 
 interface TruckCardProps {
   truck: Truck;
@@ -13,7 +20,49 @@ interface TruckCardProps {
 
 export function TruckCard({ truck }: TruckCardProps) {
   const { t, language } = useLanguage();
+  const { user, getAccessToken } = useAuth();
+  const { deleteTruck, refreshTrucks } = useTrucks();
+  const [busy, setBusy] = useState<"delete" | "archive" | null>(null);
   const coverImage = truck.images?.[0] ?? DEFAULT_LISTING_IMAGE;
+
+  const onDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm(t("adminConfirmDelete"))) return;
+    setBusy("delete");
+    try {
+      await deleteTruck(truck.id);
+      toast.success(t("adminListingDeleted"));
+    } catch {
+      toast.error(t("adminListingDeleteFailed"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const onArchive = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm(t("adminConfirmArchive"))) return;
+    setBusy("archive");
+    try {
+      const token = getAccessToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(`${apiBase}/trucks/${encodeURIComponent(truck.id)}/listing-status`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ listingStatus: "archived" }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await refreshTrucks();
+      toast.success(t("adminListingArchived"));
+    } catch {
+      toast.error(t("adminListingArchiveFailed"));
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const formatMileage = (mileage: number) => {
     return new Intl.NumberFormat("en-US").format(mileage);
@@ -39,6 +88,42 @@ export function TruckCard({ truck }: TruckCardProps) {
             ) : null}
             <Badge className="bg-blue-600 text-white">{t(truck.type)}</Badge>
           </div>
+          {user?.isAdmin ? (
+            <div className="absolute bottom-3 left-3 flex gap-1">
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="h-8 w-8 bg-black/55 text-white hover:bg-black/70"
+                title={t("adminArchiveListing")}
+                aria-label={t("adminArchiveListing")}
+                disabled={busy !== null}
+                onClick={onArchive}
+              >
+                {busy === "archive" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Archive className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="h-8 w-8 bg-black/55 text-white hover:bg-red-600"
+                title={t("adminDeleteListing")}
+                aria-label={t("adminDeleteListing")}
+                disabled={busy !== null}
+                onClick={onDelete}
+              >
+                {busy === "delete" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          ) : null}
         </div>
         <CardContent className="p-4">
           <div className="flex justify-between items-start mb-2">

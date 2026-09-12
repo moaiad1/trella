@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { useAuth } from "../context/AuthContext";
-import { useLanguage } from "../context/LanguageContext";
+import { useLanguage, type Language } from "../context/LanguageContext";
 import { useTrucks } from "../context/TruckContext";
 import { CategoryFilter } from "./CategoryFilter";
 import { computeCategoryCounts } from "../lib/categoryInventory";
@@ -14,6 +14,71 @@ import { fetchChatThreads, type ChatThreadSummary } from "../lib/chatApi";
 
 const bellTriggerClass =
   "relative z-30 px-2 [&_svg]:pointer-events-auto touch-manipulation";
+
+const LANGUAGE_LABELS: Record<Language, string> = {
+  ar: "العربية",
+  en: "English",
+  ur: "اردو",
+};
+
+function LanguageMenu({
+  language,
+  setLanguage,
+  compact,
+}: {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  compact?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const sheetSide = language === "en" ? "right" : "left";
+
+  const pick = (lang: Language) => {
+    setLanguage(lang);
+    setOpen(false);
+  };
+
+  // Sheet, not DropdownMenu: Radix Dropdown behind the sticky header + category row is unreliable on desktop (see ChatNotificationsMenu above).
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className={
+            compact
+              ? "flex shrink-0 items-center gap-1.5 px-2"
+              : "flex items-center gap-2"
+          }
+          aria-label={LANGUAGE_LABELS[language]}
+        >
+          <Languages className={compact ? "h-4 w-4" : "w-4 h-4"} />
+          <span className={compact ? "text-xs" : undefined}>{LANGUAGE_LABELS[language]}</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side={sheetSide} className="w-full gap-0 overflow-y-auto p-0 sm:max-w-xs">
+        <SheetHeader className="border-b px-4 py-4 text-start">
+          <SheetTitle>{LANGUAGE_LABELS[language]}</SheetTitle>
+        </SheetHeader>
+        <div className="flex flex-col gap-1 p-2">
+          {(Object.keys(LANGUAGE_LABELS) as Language[]).map((lang) => (
+            <button
+              key={lang}
+              type="button"
+              className={`w-full rounded-md px-3 py-2 text-start text-sm transition-colors hover:bg-accent ${
+                lang === language ? "bg-accent font-medium" : ""
+              }`}
+              onClick={() => pick(lang)}
+            >
+              {LANGUAGE_LABELS[lang]}
+            </button>
+          ))}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
 
 function ChatNotificationsMenu({
   chatThreads,
@@ -26,9 +91,9 @@ function ChatNotificationsMenu({
   chatUnread: number;
   t: (key: string) => string;
   navigate: NavigateFunction;
-  language: "en" | "ar";
+  language: Language;
 }) {
-  const sheetSide = language === "ar" ? "left" : "right";
+  const sheetSide = language === "en" ? "right" : "left";
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const go = (path: string) => {
@@ -104,7 +169,7 @@ export function Header() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const { user, logout, getAccessToken } = useAuth();
   const { trucks } = useTrucks();
   const [chatThreads, setChatThreads] = useState<ChatThreadSummary[]>([]);
@@ -180,17 +245,7 @@ export function Header() {
               <span className="leading-none">{t("siteName")}</span>
             </Link>
             <div className="relative z-30 flex shrink-0 items-center gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={toggleLanguage}
-                className="flex shrink-0 items-center gap-1.5 px-2"
-                aria-label={language === "en" ? "العربية" : "English"}
-              >
-                <Languages className="h-4 w-4" />
-                <span className="text-xs">{language === "en" ? "العربية" : "English"}</span>
-              </Button>
+              <LanguageMenu language={language} setLanguage={setLanguage} compact />
               {user ? (
                 <ChatNotificationsMenu
                   language={language}
@@ -224,16 +279,7 @@ export function Header() {
           </Link>
 
           <div className="relative z-20 hidden shrink-0 items-center md:flex">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={toggleLanguage}
-              className="flex items-center gap-2"
-            >
-              <Languages className="w-4 h-4" />
-              {language === "en" ? "العربية" : "English"}
-            </Button>
+            <LanguageMenu language={language} setLanguage={setLanguage} />
           </div>
 
           <div className="relative z-0 hidden min-h-0 min-w-0 items-center justify-end overflow-visible px-1 md:flex lg:px-2">
@@ -280,12 +326,20 @@ export function Header() {
                   {t("myAdverts")}
                 </Link>
                 {user.isAdmin ? (
-                  <Link
-                    to="/admin/companies"
-                    className="text-sm text-gray-700 transition-colors hover:text-blue-600 whitespace-nowrap"
-                  >
-                    {t("adminNavLink")}
-                  </Link>
+                  <>
+                    <Link
+                      to="/admin/companies"
+                      className="text-sm text-gray-700 transition-colors hover:text-blue-600 whitespace-nowrap"
+                    >
+                      {t("adminNavLink")}
+                    </Link>
+                    <Link
+                      to="/admin/contact-messages"
+                      className="text-sm text-gray-700 transition-colors hover:text-blue-600 whitespace-nowrap"
+                    >
+                      {t("adminContactMessagesNavLink")}
+                    </Link>
+                  </>
                 ) : null}
                 <Button
                   type="button"
@@ -353,13 +407,22 @@ export function Header() {
                     {t("myAdverts")}
                   </Link>
                   {user.isAdmin ? (
-                    <Link
-                      to="/admin/companies"
-                      className="text-center py-2 text-sm text-gray-700 hover:text-blue-600"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {t("adminNavLink")}
-                    </Link>
+                    <>
+                      <Link
+                        to="/admin/companies"
+                        className="text-center py-2 text-sm text-gray-700 hover:text-blue-600"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {t("adminNavLink")}
+                      </Link>
+                      <Link
+                        to="/admin/contact-messages"
+                        className="text-center py-2 text-sm text-gray-700 hover:text-blue-600"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {t("adminContactMessagesNavLink")}
+                      </Link>
+                    </>
                   ) : null}
                   <Button
                     variant="outline"

@@ -45,11 +45,16 @@ interface RegisterParams {
   termsAccepted: boolean;
 }
 
+export type LoginResult =
+  | { requiresTwoFactor: false }
+  | { requiresTwoFactor: true; challengeToken: string; debugCode?: string | null };
+
 interface AuthContextType {
   user: AuthUser | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LoginResult>;
+  verifyTwoFactor: (challengeToken: string, code: string) => Promise<void>;
   register: (params: RegisterParams) => Promise<void>;
   logout: () => void;
   getAccessToken: () => string | null;
@@ -112,11 +117,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [token, fetchMe]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<LoginResult> => {
     const res = await fetch(`${apiBase}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) throw new Error(await parseError(res));
+    const data = (await res.json()) as {
+      access_token?: string;
+      requiresTwoFactor?: boolean;
+      challengeToken?: string;
+      debugCode?: string | null;
+    };
+    if (data.requiresTwoFactor) {
+      return {
+        requiresTwoFactor: true,
+        challengeToken: data.challengeToken as string,
+        debugCode: data.debugCode ?? null,
+      };
+    }
+    const accessToken = data.access_token as string;
+    localStorage.setItem(STORAGE_KEY, accessToken);
+    setToken(accessToken);
+    await fetchMe(accessToken);
+    return { requiresTwoFactor: false };
+  };
+
+  const verifyTwoFactor = async (challengeToken: string, code: string) => {
+    const res = await fetch(`${apiBase}/auth/login/verify-2fa`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ challengeToken, code }),
     });
     if (!res.ok) throw new Error(await parseError(res));
     const data = (await res.json()) as { access_token: string };
@@ -153,7 +185,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, login, register, logout, getAccessToken, refreshUser }}
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        verifyTwoFactor,
+        register,
+        logout,
+        getAccessToken,
+        refreshUser,
+      }}
     >
       {children}
     </AuthContext.Provider>

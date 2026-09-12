@@ -1,14 +1,14 @@
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.catalog import catalog_make_names, catalog_models_for_make
 from app.config import resolved_upload_dir, settings
 from app.database import get_db
-from app.deps import get_current_user_required
+from app.deps import get_current_admin_user, get_current_user_required
 from app.models import SaudiCity, SaudiRegion, Truck, TruckInquiry, TruckInquiryMessage, User, VehicleMake, VehicleModel
 from app.schemas import (
     InquiryCreate,
@@ -160,7 +160,7 @@ def get_saudi_city(
 def list_trucks(db: Session = Depends(get_db)) -> list[TruckOut]:
     rows = db.execute(
         select(Truck)
-        .where(or_(Truck.listing_status.is_(None), Truck.listing_status != "sold"))
+        .where(or_(Truck.listing_status.is_(None), Truck.listing_status.notin_(["sold", "archived"])))
         .order_by(Truck.id.desc())
     ).scalars().all()
     return [truck_to_out(t, db) for t in rows]
@@ -306,12 +306,27 @@ def patch_listing_status(
     row = db.get(Truck, truck_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Truck not found")
-    if row.user_id is None or row.user_id != current_user.id:
+    is_owner = row.user_id is not None and row.user_id == current_user.id
+    if not is_owner and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not your listing")
     row.listing_status = body.listing_status
     db.commit()
     db.refresh(row)
     return truck_to_out(row, db)
+
+
+@router.delete("/{truck_id}", status_code=204)
+def delete_truck(
+    truck_id: int,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_current_admin_user),
+) -> Response:
+    row = db.get(Truck, truck_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Truck not found")
+    db.delete(row)
+    db.commit()
+    return Response(status_code=204)
 
 
 @router.put("/{truck_id}", response_model=TruckOut)

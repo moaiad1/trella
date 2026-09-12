@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user_required
-from app.models import PhoneChangeOtp, User
+from app.email_sender import send_email
+from app.models import AdminLoginChallenge, PhoneChangeOtp, User
 from app.schemas import (
     CompanyProfileUpdate,
     PasswordChange,
@@ -17,14 +18,21 @@ from app.schemas import (
     PhoneChangeRequestBody,
     PhoneSetInitialBody,
     Token,
+    TwoFactorChallenge,
     UserLogin,
     UserPublic,
     UserRegister,
+    VerifyTwoFactorBody,
 )
 from app.security import create_access_token, hash_password, normalize_phone, verify_password
 
 router = APIRouter()
 log = logging.getLogger(__name__)
+
+
+def _as_utc(dt: datetime) -> datetime:
+    """SQLite drops tzinfo on round-trip; values we write here are always UTC, so reattach it."""
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
 
 
 def _user_public(u: User) -> UserPublic:
@@ -76,13 +84,66 @@ def register(body: UserRegister, db: Session = Depends(get_db)) -> Token:
     return Token(access_token=create_access_token(user.id))
 
 
-@router.post("/login", response_model=Token)
-def login(body: UserLogin, db: Session = Depends(get_db)) -> Token:
+@router.post("/login", response_model=Token | TwoFactorChallenge)
+def login(body: UserLogin, db: Session = Depends(get_db)) -> Token | TwoFactorChallenge:
     email = str(body.email).strip().lower()
     user = db.scalar(select(User).where(User.email == email))
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    return Token(access_token=create_access_token(user.id))
+
+    if not user.is_admin:
+        return Token(access_token=create_access_token(user.id))
+
+    existing = db.scalar(select(AdminLoginChallenge).where(AdminLoginChallenge.user_id == user.id))
+    if existing:
+        db.delete(existing)
+        db.flush()
+
+    challenge_token = secrets.token_urlsafe(32)
+    code = f"{secrets.randbelow(900000) + 100000:06d}"
+    db.add(
+        AdminLoginChallenge(
+            user_id=user.id,
+            challenge_token=challenge_token,
+            code_hash=hash_password(code),
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+        )
+    )
+    db.commit()
+
+    log.warning("Admin 2FA code for user_id=%s: %s", user.id, code)
+    sent = send_email(
+        user.email,
+        "Your admin login code",
+        f"Your verification code is: {code}\n\nThis code expires in 10 minutes.",
+    )
+    if not sent:
+        log.warning("Admin 2FA email not sent (Resend not configured or send failed)")
+
+    return TwoFactorChallenge(
+        challengeToken=challenge_token,
+        debugCode=code if settings.admin_2fa_debug else None,
+    )
+
+
+@router.post("/login/verify-2fa", response_model=Token)
+def verify_two_factor(body: VerifyTwoFactorBody, db: Session = Depends(get_db)) -> Token:
+    row = db.scalar(
+        select(AdminLoginChallenge).where(AdminLoginChallenge.challenge_token == body.challengeToken)
+    )
+    if not row:
+        raise HTTPException(status_code=400, detail="Invalid or expired code — log in again")
+    if _as_utc(row.expires_at) < datetime.now(timezone.utc):
+        db.delete(row)
+        db.commit()
+        raise HTTPException(status_code=400, detail="Code expired — log in again")
+    if not verify_password(body.code, row.code_hash):
+        raise HTTPException(status_code=400, detail="Incorrect code")
+
+    user_id = row.user_id
+    db.delete(row)
+    db.commit()
+    return Token(access_token=create_access_token(user_id))
 
 
 @router.get("/me", response_model=UserPublic)
@@ -192,7 +253,7 @@ def phone_change_confirm(
     row = db.scalar(select(PhoneChangeOtp).where(PhoneChangeOtp.user_id == user.id))
     if not row:
         raise HTTPException(status_code=400, detail="No verification pending — request a code first")
-    if row.expires_at < datetime.now(timezone.utc):
+    if _as_utc(row.expires_at) < datetime.now(timezone.utc):
         db.delete(row)
         db.commit()
         raise HTTPException(status_code=400, detail="Verification code expired — request a new one")
