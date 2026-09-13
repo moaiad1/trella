@@ -3,11 +3,13 @@ import { Search, ShieldCheck, TrendingUp, Users } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { useTrucks } from "../context/TruckContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useDocumentMeta } from "../hooks/useDocumentMeta";
 import { TruckCard } from "../components/TruckCard";
 
 export function HomePage() {
   const { trucks, loading, error } = useTrucks();
   const { t } = useLanguage();
+  useDocumentMeta(t("seoHomeTitle"), t("seoHomeDescription"), "/");
   const featuredTrucks = trucks.slice(0, 3);
 
   return (

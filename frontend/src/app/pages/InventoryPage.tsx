@@ -14,14 +14,16 @@ import { Slider } from "../components/ui/slider";
 import { CATEGORY_TYPES } from "../lib/categoryInventory";
 import { SarAmount } from "../components/SarAmount";
 import { fetchSaudiRegions, type SaudiRegion } from "../lib/saudiLocationsApi";
+import { useDocumentMeta } from "../hooks/useDocumentMeta";
 
 export function InventoryPage() {
   const { trucks, loading, error } = useTrucks();
   const { t, language } = useLanguage();
+  useDocumentMeta(t("seoInventoryTitle"), t("seoInventoryDescription"), "/inventory");
   const [searchParams, setSearchParams] = useSearchParams();
   const skipUrlSync = useRef(false);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("search") ?? "");
   const [sortBy, setSortBy] = useState("dateAdded-desc");
 
   // Filters

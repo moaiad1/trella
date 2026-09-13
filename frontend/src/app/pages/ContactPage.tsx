@@ -7,6 +7,7 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { getApiBase } from "../lib/apiBase";
+import { useDocumentMeta } from "../hooks/useDocumentMeta";
 
 const apiBase = getApiBase();
 
@@ -24,6 +25,7 @@ async function parseApiError(res: Response): Promise<string> {
 
 export function ContactPage() {
   const { t } = useLanguage();
+  useDocumentMeta(t("seoContactTitle"), t("seoContactDescription"), "/contact");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");

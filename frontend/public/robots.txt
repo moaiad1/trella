@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /account
+Disallow: /admin
+Disallow: /my-listings
+Disallow: /add-truck
+Disallow: /edit-truck
+Disallow: /login
+Disallow: /signup
+
+Sitemap: https://maketsmart.com/sitemap.xml

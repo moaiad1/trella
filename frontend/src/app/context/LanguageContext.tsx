@@ -235,6 +235,17 @@ const translations = {
     heroSubtitle: "Browse thousands of quality used and commercial trucks from trusted sellers nationwide",
     browseInventory: "Browse Inventory",
     listYourTruck: "List Your Truck",
+
+    // SEO meta (page titles/descriptions)
+    seoHomeTitle: "Trucks | Buy & Sell Trucks in Saudi Arabia",
+    seoHomeDescription:
+      "Trucks marketplace for buying and selling commercial trucks and heavy equipment in Saudi Arabia. Browse thousands of trusted listings or list your truck for free.",
+    seoInventoryTitle: "Browse Trucks for Sale | Trucks",
+    seoInventoryDescription:
+      "Browse all trucks for sale in Saudi Arabia — flatbeds, dump trucks, semis, and more, at a range of prices and conditions.",
+    seoContactTitle: "Contact Us | Trucks",
+    seoContactDescription: "Get in touch with the Trucks team for any questions or support about buying or selling listings.",
+    seoForSaleSuffix: "for sale",
     
     // Features
     advancedSearch: "Advanced Search",
@@ -682,7 +693,18 @@ const translations = {
     heroSubtitle: "تصفح آلاف الشاحنات المستعملة والتجارية عالية الجودة من بائعين موثوقين في جميع أنحاء البلاد",
     browseInventory: "تصفح المركبات",
     listYourTruck: "أضف إعلان",
-    
+
+    // SEO meta (page titles/descriptions)
+    seoHomeTitle: "شاحنات | بيع وشراء الشاحنات في السعودية",
+    seoHomeDescription:
+      "منصة شاحنات لبيع وشراء الشاحنات ومعدات النقل الثقيل في السعودية. تصفح آلاف الإعلانات الموثوقة أو أضف إعلان شاحنتك مجانًا.",
+    seoInventoryTitle: "تصفح الشاحنات المعروضة للبيع | شاحنات",
+    seoInventoryDescription:
+      "تصفح كل الشاحنات المعروضة للبيع في السعودية — رافعات، قلابات، شاحنات نقل، وجرارات بأسعار وحالات متنوعة.",
+    seoContactTitle: "تواصل معنا | شاحنات",
+    seoContactDescription: "تواصل مع فريق شاحنات لأي استفسار أو دعم بخصوص إعلانات البيع والشراء.",
+    seoForSaleSuffix: "للبيع",
+
     // Features
     advancedSearch: "بحث متقدم",
     advancedSearchDesc: "قم بالتصفية حسب العلامة التجارية والطراز والسنة والسعر والمسافة المقطوعة والمزيد للعثور على ما تحتاجه بالضبط",
@@ -1130,6 +1152,17 @@ const translations = {
     heroSubtitle: "ملک بھر کے قابلِ اعتماد بیچنے والوں سے ہزاروں معیاری استعمال شدہ اور کمرشل ٹرکس براؤز کریں",
     browseInventory: "انوینٹری براؤز کریں",
     listYourTruck: "اپنا ٹرک درج کریں",
+
+    // SEO meta (page titles/descriptions)
+    seoHomeTitle: "Trucks | سعودی عرب میں ٹرکس کی خرید و فروخت",
+    seoHomeDescription:
+      "سعودی عرب میں ٹرکس اور بھاری گاڑیوں کی خرید و فروخت کا پلیٹ فارم۔ ہزاروں قابلِ اعتماد اشتہارات براؤز کریں یا اپنا ٹرک مفت میں درج کریں۔",
+    seoInventoryTitle: "فروخت کے لیے ٹرکس براؤز کریں | Trucks",
+    seoInventoryDescription:
+      "سعودی عرب میں فروخت کے لیے دستیاب تمام ٹرکس براؤز کریں — فلیٹ بیڈ، ڈمپ ٹرک، سیمی، اور مختلف قیمتوں پر۔",
+    seoContactTitle: "ہم سے رابطہ کریں | Trucks",
+    seoContactDescription: "خرید و فروخت کے اشتہارات سے متعلق کسی بھی سوال یا مدد کے لیے Trucks ٹیم سے رابطہ کریں۔",
+    seoForSaleSuffix: "برائے فروخت",
 
     // Features
     advancedSearch: "ایڈوانسڈ سرچ",

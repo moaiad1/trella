@@ -25,6 +25,7 @@ import {
 import { getApiBase } from "../lib/apiBase";
 import { DEFAULT_LISTING_IMAGE, listingRefDisplay } from "../lib/listingDefaults";
 import { SarAmount } from "../components/SarAmount";
+import { useDocumentMeta } from "../hooks/useDocumentMeta";
 import type { Truck } from "../context/TruckContext";
 
 const apiBase = getApiBase();
@@ -80,6 +81,14 @@ export function TruckDetailPage() {
   useEffect(() => {
     setGalleryIndex(0);
   }, [truck?.id]);
+
+  const seoTitle = truck
+    ? `${truck.year} ${truck.make} ${truck.model} ${t("seoForSaleSuffix")} | Trucks`
+    : t("seoInventoryTitle");
+  const seoDescription = truck
+    ? `${truck.make} ${truck.model} ${truck.year} — ${truck.location}. ${truck.description}`.slice(0, 160)
+    : t("seoInventoryDescription");
+  useDocumentMeta(seoTitle, seoDescription, id ? `/truck/${id}` : undefined);
 
   if (!truck && fetchingDetail) {
     return (
