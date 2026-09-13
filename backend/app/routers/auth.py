@@ -10,7 +10,7 @@ from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user_required
 from app.email_sender import send_email
-from app.models import AdminLoginChallenge, PhoneChangeOtp, SignupChallenge, User
+from app.models import LoginChallenge, PhoneChangeOtp, SignupChallenge, User
 from app.schemas import (
     CompanyProfileUpdate,
     PasswordChange,
@@ -182,17 +182,14 @@ def register_resend(body: ResendSignupCodeBody, db: Session = Depends(get_db)) -
     return _issue_signup_challenge(db, row, code)
 
 
-@router.post("/login", response_model=Token | TwoFactorChallenge)
-def login(body: UserLogin, db: Session = Depends(get_db)) -> Token | TwoFactorChallenge:
+@router.post("/login", response_model=TwoFactorChallenge)
+def login(body: UserLogin, db: Session = Depends(get_db)) -> TwoFactorChallenge:
     email = str(body.email).strip().lower()
     user = db.scalar(select(User).where(User.email == email))
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    if not user.is_admin:
-        return Token(access_token=create_access_token(user.id))
-
-    existing = db.scalar(select(AdminLoginChallenge).where(AdminLoginChallenge.user_id == user.id))
+    existing = db.scalar(select(LoginChallenge).where(LoginChallenge.user_id == user.id))
     if existing:
         db.delete(existing)
         db.flush()
@@ -200,7 +197,7 @@ def login(body: UserLogin, db: Session = Depends(get_db)) -> Token | TwoFactorCh
     challenge_token = secrets.token_urlsafe(32)
     code = f"{secrets.randbelow(900000) + 100000:06d}"
     db.add(
-        AdminLoginChallenge(
+        LoginChallenge(
             user_id=user.id,
             challenge_token=challenge_token,
             code_hash=hash_password(code),
@@ -209,14 +206,14 @@ def login(body: UserLogin, db: Session = Depends(get_db)) -> Token | TwoFactorCh
     )
     db.commit()
 
-    log.warning("Admin 2FA code for user_id=%s: %s", user.id, code)
+    log.warning("Login 2FA code for user_id=%s: %s", user.id, code)
     sent = send_email(
         user.email,
-        "Your admin login code",
+        "Your Trucks login code",
         f"Your verification code is: {code}\n\nThis code expires in 10 minutes.",
     )
     if not sent:
-        log.warning("Admin 2FA email not sent (Resend not configured or send failed)")
+        log.warning("Login 2FA email not sent (Resend not configured or send failed)")
 
     return TwoFactorChallenge(
         challengeToken=challenge_token,
@@ -227,7 +224,7 @@ def login(body: UserLogin, db: Session = Depends(get_db)) -> Token | TwoFactorCh
 @router.post("/login/verify-2fa", response_model=Token)
 def verify_two_factor(body: VerifyTwoFactorBody, db: Session = Depends(get_db)) -> Token:
     row = db.scalar(
-        select(AdminLoginChallenge).where(AdminLoginChallenge.challenge_token == body.challengeToken)
+        select(LoginChallenge).where(LoginChallenge.challenge_token == body.challengeToken)
     )
     if not row:
         raise HTTPException(status_code=400, detail="Invalid or expired code — log in again")

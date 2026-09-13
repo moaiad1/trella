@@ -417,8 +417,13 @@ export function SignupPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={verifyOpen} onOpenChange={(open) => !verifying && setVerifyOpen(open)}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={verifyOpen} onOpenChange={() => {}}>
+        <DialogContent
+          className="sm:max-w-md [&>button]:hidden"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractionOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>{t("signupVerifyTitle")}</DialogTitle>
             <DialogDescription>{t("signupVerifySubtitle")}</DialogDescription>
@@ -455,6 +460,18 @@ export function SignupPage() {
                 : cooldownRemaining > 0
                   ? `${t("resendCodeIn")} ${cooldownRemaining}s`
                   : t("resendCode")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={verifying}
+              onClick={() => {
+                setVerifyOpen(false);
+                setVerifyCode("");
+              }}
+            >
+              {t("cancel")}
             </Button>
           </form>
         </DialogContent>

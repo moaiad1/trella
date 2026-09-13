@@ -122,8 +122,9 @@ class PhoneChangeOtp(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-class AdminLoginChallenge(Base):
-    """Pending two-factor code for an admin login, keyed by an opaque challenge token."""
+class LoginChallenge(Base):
+    """Pending two-factor code for a login, keyed by an opaque challenge token.
+    Table name kept as admin_login_challenges (originally admin-only) to avoid a migration."""
 
     __tablename__ = "admin_login_challenges"
 
