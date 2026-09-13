@@ -408,6 +408,59 @@ class ContactMessageCreate(BaseModel):
     body: str = Field(min_length=1, max_length=4000)
 
 
+class PageViewCreate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    sessionId: str = Field(min_length=1, max_length=64)
+    path: str = Field(min_length=1, max_length=512)
+    referrer: str = Field(default="", max_length=512)
+
+
+class SearchQueryCreate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    sessionId: str = Field(min_length=1, max_length=64)
+    query: str = Field(min_length=1, max_length=256)
+
+
+class AnalyticsCountItem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    label: str
+    count: int
+
+
+class AnalyticsDailyPoint(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    date: str
+    views: int
+    visitors: int
+
+
+class AnalyticsRecentVisit(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    ip: str
+    country: str
+    path: str
+    createdAt: str
+
+
+class AnalyticsSummaryOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    totalPageViews: int
+    uniqueVisitors: int
+    newVisitors: int
+    returningVisitors: int
+    topCountries: list[AnalyticsCountItem]
+    topPages: list[AnalyticsCountItem]
+    topSearches: list[AnalyticsCountItem]
+    dailySeries: list[AnalyticsDailyPoint]
+    recentVisits: list[AnalyticsRecentVisit]
+
+
 class ContactMessageOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 

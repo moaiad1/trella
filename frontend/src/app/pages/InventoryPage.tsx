@@ -15,6 +15,7 @@ import { CATEGORY_TYPES } from "../lib/categoryInventory";
 import { SarAmount } from "../components/SarAmount";
 import { fetchSaudiRegions, type SaudiRegion } from "../lib/saudiLocationsApi";
 import { useDocumentMeta } from "../hooks/useDocumentMeta";
+import { trackSearch } from "../lib/analytics";
 
 export function InventoryPage() {
   const { trucks, loading, error } = useTrucks();
@@ -402,7 +403,10 @@ export function InventoryPage() {
                 type="text"
                 placeholder={t("searchPlaceholder")}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  trackSearch(e.target.value);
+                }}
                 className="pl-10"
               />
             </div>

@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import resolved_upload_dir, settings
 from app.database import SessionLocal, engine
 from app.models import Base
-from app.routers import admin, ai_listing, auth, contact, me, seo, trucks
+from app.routers import admin, ai_listing, analytics, auth, contact, me, seo, trucks
 from app.schema_bootstrap import (
     ensure_truck_inquiry_columns,
     ensure_truck_table_columns,
@@ -64,6 +64,7 @@ app.include_router(me.router, prefix="/api")
 app.include_router(ai_listing.router, prefix="/api")
 app.include_router(admin.router, prefix="/api/admin")
 app.include_router(contact.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
 app.include_router(seo.router)
 
 _upload_dir = resolved_upload_dir()

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router";
 import { RootLayout } from "./components/RootLayout";
 import { RequireAuth } from "./components/RequireAuth";
@@ -15,6 +16,11 @@ import { AdminCompaniesPage } from "./pages/AdminCompaniesPage";
 import { AdminContactMessagesPage } from "./pages/AdminContactMessagesPage";
 import { ContactPage } from "./pages/ContactPage";
 import { NotFound } from "./pages/NotFound";
+
+// Lazy-loaded: pulls in recharts, which only admins viewing this one page need.
+const AdminAnalyticsPage = lazy(() =>
+  import("./pages/AdminAnalyticsPage").then((m) => ({ default: m.AdminAnalyticsPage })),
+);
 
 export const router = createBrowserRouter([
   {
@@ -77,6 +83,16 @@ export const router = createBrowserRouter([
         element: (
           <RequireAdmin>
             <AdminContactMessagesPage />
+          </RequireAdmin>
+        ),
+      },
+      {
+        path: "admin/analytics",
+        element: (
+          <RequireAdmin>
+            <Suspense fallback={null}>
+              <AdminAnalyticsPage />
+            </Suspense>
           </RequireAdmin>
         ),
       },

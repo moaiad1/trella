@@ -155,6 +155,42 @@ class SignupChallenge(Base):
     last_sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class PageView(Base):
+    """One page-view event, logged by the frontend on each route change."""
+
+    __tablename__ = "page_views"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    path: Mapped[str] = mapped_column(String(512))
+    referrer: Mapped[str] = mapped_column(String(512), default="")
+    ip_address: Mapped[str] = mapped_column(String(64), default="")
+    country: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    user_agent: Mapped[str] = mapped_column(String(512), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+class SearchQuery(Base):
+    """A search term entered in the inventory search box — useful for seeing what buyers look for."""
+
+    __tablename__ = "search_queries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    query: Mapped[str] = mapped_column(String(256))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+class IpGeoCache(Base):
+    """Cached IP -> country lookups so repeat visits don't re-hit the geolocation API."""
+
+    __tablename__ = "ip_geo_cache"
+
+    ip_address: Mapped[str] = mapped_column(String(64), primary_key=True)
+    country: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    resolved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ContactMessage(Base):
     """A message submitted through the public "Contact us" form."""
 

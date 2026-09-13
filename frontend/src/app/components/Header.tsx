@@ -339,6 +339,12 @@ export function Header() {
                     >
                       {t("adminContactMessagesNavLink")}
                     </Link>
+                    <Link
+                      to="/admin/analytics"
+                      className="text-sm text-gray-700 transition-colors hover:text-blue-600 whitespace-nowrap"
+                    >
+                      {t("adminAnalyticsNavLink")}
+                    </Link>
                   </>
                 ) : null}
                 <Button
@@ -421,6 +427,13 @@ export function Header() {
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         {t("adminContactMessagesNavLink")}
+                      </Link>
+                      <Link
+                        to="/admin/analytics"
+                        className="text-center py-2 text-sm text-gray-700 hover:text-blue-600"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {t("adminAnalyticsNavLink")}
                       </Link>
                     </>
                   ) : null}

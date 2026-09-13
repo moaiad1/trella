@@ -1,13 +1,20 @@
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_admin_user
-from app.models import ContactMessage, User
-from app.schemas import AdminCompanyOut, AdminCompanyStatusUpdate, ContactMessageOut
+from app.models import ContactMessage, PageView, SearchQuery, User
+from app.schemas import (
+    AdminCompanyOut,
+    AdminCompanyStatusUpdate,
+    AnalyticsCountItem,
+    AnalyticsSummaryOut,
+    ContactMessageOut,
+)
 
 router = APIRouter()
 
@@ -105,3 +112,107 @@ def mark_contact_message_read(
     db.commit()
     db.refresh(m)
     return _contact_message_out(m)
+
+
+@router.get("/analytics/summary", response_model=AnalyticsSummaryOut)
+def analytics_summary(
+    days: int = 30,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_current_admin_user),
+) -> AnalyticsSummaryOut:
+    days = max(1, min(days, 365))
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+
+    total_page_views = db.scalar(select(func.count(PageView.id)).where(PageView.created_at >= since)) or 0
+
+    unique_visitors = (
+        db.scalar(select(func.count(func.distinct(PageView.session_id))).where(PageView.created_at >= since))
+        or 0
+    )
+
+    first_seen_subq = (
+        select(PageView.session_id, func.min(PageView.created_at).label("first_seen"))
+        .group_by(PageView.session_id)
+        .subquery()
+    )
+    sessions_in_range = (
+        select(PageView.session_id).where(PageView.created_at >= since).distinct().subquery()
+    )
+    new_visitors = (
+        db.scalar(
+            select(func.count())
+            .select_from(first_seen_subq)
+            .where(first_seen_subq.c.session_id.in_(select(sessions_in_range.c.session_id)))
+            .where(first_seen_subq.c.first_seen >= since)
+        )
+        or 0
+    )
+    returning_visitors = max(0, unique_visitors - new_visitors)
+
+    top_countries_rows = db.execute(
+        select(PageView.country, func.count(PageView.id).label("cnt"))
+        .where(PageView.created_at >= since, PageView.country.is_not(None))
+        .group_by(PageView.country)
+        .order_by(func.count(PageView.id).desc())
+        .limit(10)
+    ).all()
+
+    top_pages_rows = db.execute(
+        select(PageView.path, func.count(PageView.id).label("cnt"))
+        .where(PageView.created_at >= since)
+        .group_by(PageView.path)
+        .order_by(func.count(PageView.id).desc())
+        .limit(10)
+    ).all()
+
+    top_searches_rows = db.execute(
+        select(SearchQuery.query, func.count(SearchQuery.id).label("cnt"))
+        .where(SearchQuery.created_at >= since)
+        .group_by(SearchQuery.query)
+        .order_by(func.count(SearchQuery.id).desc())
+        .limit(15)
+    ).all()
+
+    daily_rows = db.execute(
+        select(
+            func.date(PageView.created_at).label("day"),
+            func.count(PageView.id).label("views"),
+            func.count(func.distinct(PageView.session_id)).label("visitors"),
+        )
+        .where(PageView.created_at >= since)
+        .group_by(func.date(PageView.created_at))
+        .order_by(func.date(PageView.created_at))
+    ).all()
+
+    recent_rows = (
+        db.execute(
+            select(PageView)
+            .where(PageView.created_at >= since)
+            .order_by(PageView.created_at.desc())
+            .limit(50)
+        )
+        .scalars()
+        .all()
+    )
+
+    return AnalyticsSummaryOut(
+        totalPageViews=total_page_views,
+        uniqueVisitors=unique_visitors,
+        newVisitors=new_visitors,
+        returningVisitors=returning_visitors,
+        topCountries=[AnalyticsCountItem(label=c or "Unknown", count=n) for c, n in top_countries_rows],
+        topPages=[AnalyticsCountItem(label=p, count=n) for p, n in top_pages_rows],
+        topSearches=[AnalyticsCountItem(label=q, count=n) for q, n in top_searches_rows],
+        dailySeries=[
+            {"date": str(d), "views": v, "visitors": u} for d, v, u in daily_rows
+        ],
+        recentVisits=[
+            {
+                "ip": r.ip_address,
+                "country": r.country or "",
+                "path": r.path,
+                "createdAt": r.created_at.isoformat() if r.created_at else "",
+            }
+            for r in recent_rows
+        ],
+    )
