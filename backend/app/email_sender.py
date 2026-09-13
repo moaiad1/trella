@@ -13,12 +13,15 @@ def send_email(to: str, subject: str, text: str) -> bool:
     """Send a transactional email via Resend. No-ops (returns False) if RESEND_API_KEY isn't set."""
     if not settings.resend_api_key:
         return False
+    from_header = settings.resend_from_email
+    if "<" not in from_header:
+        from_header = f"Trucks <{from_header}>"
     try:
         res = httpx.post(
             _RESEND_URL,
             headers={"Authorization": f"Bearer {settings.resend_api_key}"},
             json={
-                "from": settings.resend_from_email,
+                "from": from_header,
                 "to": [to],
                 "subject": subject,
                 "text": text,
